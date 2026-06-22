@@ -23,32 +23,41 @@ import { ConsultancyServicesModule } from './consultancy-services/consultancy-se
 import { HoroscopesModule } from './horoscopes/horoscopes.module';
 import { PanchangsModule } from './panchangs/panchangs.module';
 import { NotificationsModule } from './notifications/notifications.module';
-@Module({
-  imports: [
+
+const imports: any[] = [
+  PrismaModule,
+  UsersModule,
+  AuthModule,
+  ProductsModule,
+  PanditsModule,
+  BannersModule,
+  FestivalsModule,
+  UploadModule,
+  InventoryModule,
+  ShiprocketModule,
+  OrdersModule,
+  PoojaTypesModule,
+  BookingsModule,
+  WishlistModule,
+  PoojaVidhisModule,
+  ConsultancyServicesModule,
+  HoroscopesModule,
+  PanchangsModule,
+  NotificationsModule,
+];
+
+// Prevent crash on Vercel where the uploads folder doesn't exist (it's gitignored)
+if (!process.env.VERCEL) {
+  imports.push(
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
     }),
-    PrismaModule,
-    UsersModule,
-    AuthModule,
-    ProductsModule,
-    PanditsModule,
-    BannersModule,
-    FestivalsModule,
-    UploadModule,
-    InventoryModule,
-    ShiprocketModule,
-    OrdersModule,
-    PoojaTypesModule,
-    BookingsModule,
-    WishlistModule,
-    PoojaVidhisModule,
-    ConsultancyServicesModule,
-    HoroscopesModule,
-    PanchangsModule,
-    NotificationsModule,
-  ],
+  );
+}
+
+@Module({
+  imports,
   controllers: [AppController],
   providers: [AppService],
 })
