@@ -1,23 +1,30 @@
+// @ts-nocheck
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { ExpressAdapter } from '@nestjs/platform-express';
-
 import express from 'express';
 
-const expressApp = express();
+const server = express();
+
+let cachedServer: any;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
-  
-  app.setGlobalPrefix('api');
-  await app.init();
+  if (!cachedServer) {
+    const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
+    app.enableCors({
+      origin: true,
+      credentials: true,
+    });
+    
+    app.setGlobalPrefix('api');
+    await app.init();
+    cachedServer = server;
+  }
+  return cachedServer;
 }
 
-bootstrap();
-
-export default expressApp;
+export default async function handler(req: any, res: any) {
+  const app = await bootstrap();
+  return app(req, res);
+}
