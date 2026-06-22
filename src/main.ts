@@ -1,20 +1,33 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import * as express from 'express';
 import { join } from 'path';
 
+const expressApp = express();
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
   app.enableCors({
     origin: true, // Allow requests from Next.js on localhost or network IP
     credentials: true,
   });
   
-  // Serve static files from the 'uploads' directory
-  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+  if (!process.env.VERCEL) {
+    // Serve static files from the 'uploads' directory
+    app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+  }
   
   app.setGlobalPrefix('api');
-  await app.listen(process.env.PORT ?? 3001, '0.0.0.0');
+  await app.init();
+  
+  // Only listen on a port if NOT on Vercel
+  if (!process.env.VERCEL) {
+    await app.listen(process.env.PORT ?? 3001, '0.0.0.0');
+  }
 }
+
 bootstrap();
+
+export default expressApp;
