@@ -4,6 +4,7 @@ import { AppModule } from '../src/app.module';
 import { ExpressAdapter } from '@nestjs/platform-express';
 
 const express = require('express');
+// @ts-ignore
 const expressApp = express();
 
 async function bootstrap() {
