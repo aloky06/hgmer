@@ -3,8 +3,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { ExpressAdapter } from '@nestjs/platform-express';
 
-const express = require('express');
-// @ts-ignore
+import express from 'express';
+
 const expressApp = express();
 
 async function bootstrap() {
