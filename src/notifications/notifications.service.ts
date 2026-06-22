@@ -7,8 +7,9 @@ export class NotificationsService {
   constructor(private prisma: PrismaService) {}
 
   async broadcast(data: { title: string; message: string; type: string; linkType?: string; linkTarget?: string }) {
-    // Dynamic import to bypass Vercel ERR_REQUIRE_ESM
-    const { Expo } = await import('expo-server-sdk');
+    // Dynamic import hidden from TypeScript/Webpack to bypass ERR_REQUIRE_ESM
+    const expoSdk = await Function('return import("expo-server-sdk")')();
+    const Expo = expoSdk.Expo;
     const expo = new Expo();
 
     // Fetch all users to broadcast to
