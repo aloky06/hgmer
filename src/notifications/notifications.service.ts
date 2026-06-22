@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
+import type { Expo as ExpoType, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 
 @Injectable()
 export class NotificationsService {
-  private expo: Expo;
-
-  constructor(private prisma: PrismaService) {
-    this.expo = new Expo();
-  }
+  constructor(private prisma: PrismaService) {}
 
   async broadcast(data: { title: string; message: string; type: string; linkType?: string; linkTarget?: string }) {
+    // Dynamic import to bypass Vercel ERR_REQUIRE_ESM
+    const { Expo } = await import('expo-server-sdk');
+    const expo = new Expo();
+
     // Fetch all users to broadcast to
     const users = await this.prisma.user.findMany({
       select: { id: true, pushToken: true }
@@ -40,11 +40,11 @@ export class NotificationsService {
     }
 
     if (messages.length > 0) {
-      const chunks = this.expo.chunkPushNotifications(messages);
+      const chunks = expo.chunkPushNotifications(messages);
       const tickets: ExpoPushTicket[] = [];
       for (const chunk of chunks) {
         try {
-          const ticketChunk = await this.expo.sendPushNotificationsAsync(chunk);
+          const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
           tickets.push(...ticketChunk);
         } catch (error) {
           console.error('Error sending Expo push notifications:', error);
