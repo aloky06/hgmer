@@ -29,7 +29,7 @@ export class ProductsController {
   }
 
   @Get()
-  findAll(
+  async findAll(
     @Query('warehouseId') warehouseId?: string,
     @Query('categoryId') categoryId?: string,
     @Query('sort') sort?: string,
@@ -37,14 +37,23 @@ export class ProductsController {
     @Query('maxPrice') maxPrice?: string,
     @Query('search') search?: string,
   ) {
-    return this.productsService.findAll(
-      warehouseId ? +warehouseId : undefined,
-      categoryId ? +categoryId : undefined,
-      sort,
-      minPrice ? +minPrice : undefined,
-      maxPrice ? +maxPrice : undefined,
-      search
-    );
+    try {
+      return await this.productsService.findAll(
+        warehouseId ? +warehouseId : undefined,
+        categoryId ? +categoryId : undefined,
+        sort,
+        minPrice ? +minPrice : undefined,
+        maxPrice ? +maxPrice : undefined,
+        search
+      );
+    } catch (error) {
+      return {
+        isError: true,
+        message: "Prisma Database Error in Products",
+        errorName: error.name,
+        errorMessage: error.message
+      };
+    }
   }
 
   @Get('admin')
