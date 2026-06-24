@@ -1,5 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+function extractPublicId(url: string) {
+  if (!url || !url.includes('cloudinary.com')) return null;
+  try {
+    const parts = url.split('/');
+    const uploadIndex = parts.findIndex(p => p === 'upload');
+    if (uploadIndex === -1) return null;
+    let startIndex = uploadIndex + 1;
+    if (parts[startIndex] && parts[startIndex].startsWith('v')) {
+      startIndex++;
+    }
+    const publicIdWithExt = parts.slice(startIndex).join('/');
+    return publicIdWithExt.substring(0, publicIdWithExt.lastIndexOf('.'));
+  } catch (e) {
+    return null;
+  }
+}
 
 @Injectable()
 export class ProductsService {
@@ -131,6 +155,19 @@ export class ProductsService {
 
     return this.prisma.$transaction(async (tx) => {
       if (galleryUrls !== undefined) {
+        // Delete removed images from Cloudinary
+        const oldImages = await tx.productImage.findMany({ where: { productId: id } });
+        const newUrlsSet = new Set(galleryUrls || []);
+        for (const old of oldImages) {
+          if (!newUrlsSet.has(old.url)) {
+            const publicId = extractPublicId(old.url);
+            if (publicId) {
+              try { await cloudinary.uploader.destroy(publicId); }
+              catch (error) { console.error('Failed to delete image from Cloudinary', error); }
+            }
+          }
+        }
+
         await tx.productImage.deleteMany({ where: { productId: id } });
         if (galleryUrls.length > 0) {
           productData.images = {
@@ -146,6 +183,20 @@ export class ProductsService {
   }
 
   async remove(id: number) {
+    const product = await this.prisma.product.findUnique({ where: { id }, include: { images: true } });
+    if (product) {
+      const urlsToDelete = product.images.map(img => img.url);
+      if (product.imageUrl) urlsToDelete.push(product.imageUrl);
+      
+      for (const url of urlsToDelete) {
+        const publicId = extractPublicId(url);
+        if (publicId) {
+          try { await cloudinary.uploader.destroy(publicId); }
+          catch (error) { console.error('Failed to delete image from Cloudinary', error); }
+        }
+      }
+    }
+    
     return this.prisma.product.delete({
       where: { id },
     });
