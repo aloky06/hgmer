@@ -24,7 +24,7 @@ export class UploadController {
       const uploadStream = cloudinary.uploader.upload_stream(
         { folder: 'hgmer' },
         (error, result) => {
-          if (error) return reject(new BadRequestException('Failed to upload image to Cloudinary'));
+          if (error || !result) return reject(new BadRequestException('Failed to upload image to Cloudinary'));
           resolve({ url: result.secure_url });
         },
       );
