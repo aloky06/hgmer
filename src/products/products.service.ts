@@ -219,6 +219,16 @@ export class ProductsService {
   }
 
   async updateCategory(id: number, data: any) {
+    if (data.iconUrl !== undefined) {
+      const oldCat = await this.prisma.category.findUnique({ where: { id } });
+      if (oldCat && oldCat.iconUrl && oldCat.iconUrl !== data.iconUrl) {
+        const publicId = extractPublicId(oldCat.iconUrl);
+        if (publicId) {
+          try { await cloudinary.uploader.destroy(publicId); }
+          catch (error) { console.error('Failed to delete old category icon from Cloudinary', error); }
+        }
+      }
+    }
     return this.prisma.category.update({
       where: { id },
       data,
@@ -226,6 +236,14 @@ export class ProductsService {
   }
 
   async deleteCategory(id: number) {
+    const cat = await this.prisma.category.findUnique({ where: { id } });
+    if (cat && cat.iconUrl) {
+      const publicId = extractPublicId(cat.iconUrl);
+      if (publicId) {
+        try { await cloudinary.uploader.destroy(publicId); }
+        catch (error) { console.error('Failed to delete category icon from Cloudinary', error); }
+      }
+    }
     return this.prisma.category.delete({
       where: { id },
     });
